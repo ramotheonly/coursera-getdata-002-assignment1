@@ -12,31 +12,32 @@
 ##  3.) do_plot(SUBJECT_ID, FEATURE_OFFSET)
 
 library(data.table)
+setwd(".");
 
 ##
-test_count <- -1
-#test_count <- 100    ##!!!!! FOR TEST ONLY !!!!!
+test_count <- -1;
+#test_count <- 100;    ##!!!!! FOR TEST ONLY !!!!!
 
 data_directory = "UCI HAR Dataset";
 
-activities <- NULL
-features <- NULL
-full_dataset <- NULL
+activities <- NULL;
+features <- NULL;
+full_dataset <- NULL;
 
-tidy_activity_mean_and_std <- NULL
-tidy_subject_activity_avg <- NULL
+tidy_activity_mean_and_std <- NULL;
+tidy_subject_activity_avg <- NULL;
 
 
 run <- function(force_refresh=FALSE) {
-  fetchData(force_refresh)
-  datainfo()
+  fetchData(force_refresh);
+  datainfo();
 }
 
 write_octave <- function() 
 {
-  octave_set <- as.data.table(full_dataset)
-  octave_set[,activity:=NULL]
-  write.table(octave_set, file="octave_training.txt", append=FALSE, quote=TRUE, row.names=FALSE, col.names=FALSE, eol="\n", sep="\t")
+  octave_set <- as.data.table(full_dataset);
+  octave_set[,activity:=NULL];
+  write.table(octave_set, file="octave_training.txt", append=FALSE, quote=TRUE, row.names=FALSE, col.names=FALSE, eol="\n", sep="\t");
   
   train_y <- as.matrix(as.integer(full_dataset$activity=="WALKING"));
   write.table(train_y, file="octave_walking.txt", append=FALSE, quote=TRUE, row.names=FALSE, col.names=FALSE, eol="\n", sep="\t");
@@ -60,6 +61,7 @@ write_octave <- function()
 
 write_tidy <- function()
 {
+  print("Saving the tidy dataset(s) ...");
   write.table(full_dataset, file="tidy_full_dataset.txt", append=FALSE, quote=TRUE, row.names=FALSE, col.names=TRUE, eol="\n", sep=",")
   write.table(tidy_activity_mean_and_std, file="tidy_activity_mean_and_std.txt", quote=FALSE, append=FALSE, row.names=FALSE, col.names=TRUE, eol="\n", sep=",")
   write.table(tidy_subject_activity_avg, file="tidy_subject_activity_avg.txt", quote=FALSE, append=FALSE, row.names=FALSE, col.names=TRUE, eol="\n", sep=",")
@@ -67,6 +69,7 @@ write_tidy <- function()
 
 read_tidy <- function()
 {
+  print("Reading the tidy dataset(s) ...");
   if(file.exists("tidy_activity_mean_and_std.txt")) tidy_activity_mean_and_std <<- read.table(file="tidy_activity_mean_and_std.txt",header=TRUE, sep=",");
   if(file.exists("tidy_subject_activity_avg.txt")) tidy_subject_activity_avg <<- read.table(file="tidy_subject_activity_avg.txt", header=TRUE, sep=",");  
   if(file.exists("tidy_full_dataset.txt")) read.table(file="tidy_full_dataset.txt", quote="\"", header=TRUE, sep=",");  
@@ -86,6 +89,7 @@ downloadData <- function()
     print(paste("!!!ERROR!!! - Could not ensure download zip archive",zipname, sep=" - "));
     return(FALSE);
   }
+  print("Unzipping the dataset ...");
   unzip(zipname, exdir=".", overwrite=TRUE);
   return(TRUE);
 }
@@ -133,6 +137,9 @@ datainfo <- function() {
 
 #### MAIN FUNCTION TO TIDY UP THE RAW DATA AND SAVE LOCALLY
 refresh_tidy <- function() {
+  
+  print("Refreshing the tidy dataset(s) ...");
+  
   directory <- data_directory;
   
   ## IN SUB-DIRECTORY "train/"
@@ -176,9 +183,11 @@ refresh_tidy <- function() {
   tidy_activity_mean_and_std <<- subset(full_dataset, select=c("activity",mean_std_fields));
   
   #Extract Tidy Data Set #1 for SUBJECT_ID + ACTIVITY + AVG fields
-  avg_fields <- names(full_dataset)[grep("-mean()", names(full_dataset))];
-  tidy_subject_activity_avg <<- subset(full_dataset, select=c("subject_id","activity",avg_fields));
-  
+  #avg_fields <- names(full_dataset)[grep("-mean()", names(full_dataset))];
+  tidy_subject_activity_avg <<- subset(full_dataset, select=c("subject_id","activity",mean_std_fields));
+  #summarize all numeric columns, grouped by subject & activity
+  library(plyr);
+  tidy_subject_activity_avg <<- ddply(tidy_subject_activity_avg, .(subject_id,activity), numcolwise(mean));
   
   write_tidy();
 }
