@@ -194,9 +194,9 @@ refresh_tidy <- function() {
 
 
 #Utility Function to perform descriptive analysis and visualize the data for validations
-do_plot <- function(subjid, feature_offset=7) {
-  if(is.null(full_dataset)){run()}
-  subject_set <- as.data.frame(subset(full_dataset,subject_id==subjid))  ## subset training dataset for subject's data
+do_plot <- function(subjid, feature_offset=3, dataset=full_dataset) {
+  if(is.null(dataset)){run()}
+  subject_set <- as.data.frame(subset(dataset,subject_id==subjid))  ## subset training dataset for subject's data
   sscount <- nrow(subject_set)
   
   plot.new()
